@@ -1,0 +1,7 @@
+**.pt
+**/**.pt
+__pycache__/
+**/checkpoints
+**/**.bin
+**/**.safetensors
+**/**.pkl

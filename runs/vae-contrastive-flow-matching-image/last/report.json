@@ -1,0 +1,1 @@
+{"loss_history": [0.77728, 0.67923], "test_loss_history": [0.68766, 0.64362], "train_metric_history": {"r2": [0.44988, 0.5088]}, "test_metric_history": {"r2": [0.50746, 0.53337]}, "train_time_history": [60.349, 40.698], "epochs": 2}
