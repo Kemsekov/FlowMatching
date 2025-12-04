@@ -2,7 +2,9 @@
 This is images contrastive conditional flow-matching implementation with classifier-free guidance.
 
 Model trains a flow matching model that maps random normal distribution to images. https://arxiv.org/abs/2210.02747
+
 It conditions generation on CLIP embeddings of images. https://arxiv.org/abs/2103.00020
+
 Loss functions adds constraint that for different CLIP embeddings from same prior we get different flow directions. https://arxiv.org/abs/2506.05350
 
 # Setup
