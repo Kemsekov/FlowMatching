@@ -18,6 +18,16 @@ When training occurs, you can use this module to check how training goes and gen
 
 # Examples
 On my private dataset of 2d trees assets, after 432 epochs, I got r2 ~ 0.75 with following results.
+
+Unconditional generation:
+
 <img width="790" height="382" alt="image" src="https://github.com/user-attachments/assets/f18c80a6-fe93-4140-acb6-7e05daef2eec" />
 <img width="790" height="382" alt="image" src="https://github.com/user-attachments/assets/2986de31-4560-4395-882a-4043e787c073" />
+
+Conditional generation:
+
+<img width="1189" height="375" alt="image" src="https://github.com/user-attachments/assets/a2d628fa-5b0a-477e-bcfb-69d48c3cb7cc" />
+<img width="1189" height="375" alt="image" src="https://github.com/user-attachments/assets/9ffb993c-1ba8-4773-b954-60f5762d4cc8" />
+
+
 
