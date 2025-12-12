@@ -1,40 +1,70 @@
 import torch
 import torchvision.transforms as T
 import PIL.Image as Image
+import PIL.Image
 from diffusers.models import AutoencoderKL
 
-# model that we gonna use
-vae = AutoencoderKL.from_pretrained("stabilityai/sdxl-vae").bfloat16()
+class VaeEncoder:
+    def __init__(self, model_name="stabilityai/sdxl-vae", dtype=torch.bfloat16, device="cuda"):
+        """
+        Initialize the VAE encoder/decoder.
 
-def encode(image,device='cuda') -> torch.Tensor:
-    if torch.cuda.is_available() and device=='cuda':
-        vae.cuda()
-    else:
-        vae.cpu()
-        device='cpu'
-    dtype = list(vae.parameters())[0].dtype
-        
-    if isinstance(image,Image.Image):
-        image = T.ToTensor()(image)
-    if image.ndim==3: image=image[None,:]
-    image=image.to(device).to(dtype)
-    # Encode to latent space
-    with torch.no_grad():
-        posterior = vae.encode(image)           # Diagonal Gaussian
-        latents = posterior.latent_dist.sample() * vae.config.scaling_factor
-    return latents.cpu()
-    # print("Latent shape:", latents.shape)  # e.g. [1, 4, 64, 64]
+        Args:
+            model_name (str): Hugging Face model identifier for the VAE.
+            dtype (torch.dtype): Data type for the model weights (default: bfloat16).
+            device (str): Preferred device ('cuda' or 'cpu').
+        """
+        self.device = device if torch.cuda.is_available() or device != "cuda" else "cpu"
+        self.dtype = dtype
+        self.vae = AutoencoderKL.from_pretrained(model_name).to(self.dtype).to(self.device)
+        self.vae.eval()  # Set to evaluation mode
 
-def decode(latents,device='cuda'):
-    if torch.cuda.is_available() and device=='cuda':
-        vae.cuda()
-    else:
-        vae.cpu()
-        device='cpu'
-    dtype = list(vae.parameters())[0].dtype
-    # Decode back to image
-    with torch.no_grad():
-        recon = vae.decode(latents.to(device).to(dtype) / vae.config.scaling_factor).sample.clip(0,1)
+    def _to_tensor(self, image):
+        """Convert PIL image or tensor to normalized 4D tensor."""
+        if isinstance(image, Image.Image):
+            image = T.ToTensor()(image.convert("RGB"))
+        if image.ndim == 3:
+            image = image.unsqueeze(0)
+        return image
 
-    # print("Reconstruction shape:", recon.shape)  # [1, 3, 512, 512]
-    return recon.float()
+    @torch.no_grad()
+    def encode(self, image : PIL.Image.Image | torch.Tensor):
+        """
+        Encode an image (PIL or tensor) into the VAE latent space.
+
+        Args:
+            image (PIL.Image.Image or torch.Tensor): Input image.
+                If tensor: shape (C, H, W) or (B, C, H, W), values in [0, 1].
+
+        Returns:
+            torch.Tensor: Latent representation, shape (B, 4, H//8, W//8).
+        """
+        image = self._to_tensor(image)
+        im_dev = image.device
+        image = image.to(self.device, dtype=self.dtype)
+
+        posterior = self.vae.encode(image)
+        latents = posterior.latent_dist.sample() * self.vae.config.scaling_factor
+        return latents.to(im_dev)
+
+    @torch.no_grad()
+    def decode(self, latents : torch.Tensor):
+        """
+        Decode latents back to image space.
+
+        Args:
+            latents (torch.Tensor): Latent tensor, typically shape (B, 4, H, W).
+
+        Returns:
+            torch.Tensor: Reconstructed image, shape (B, 3, H*8, W*8), values in [0, 1].
+        """
+        dev = latents.device
+        latents = latents.to(self.device, dtype=self.dtype)
+        recon = self.vae.decode(latents / self.vae.config.scaling_factor).sample
+        return recon.clamp(0, 1).to(dev).float()
+
+    def to(self, device):
+        """Move VAE to specified device."""
+        self.device = device
+        self.vae = self.vae.to(device)
+        return self

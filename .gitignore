@@ -8,3 +8,6 @@ __pycache__/
 **/**.json
 **/*.zip
 prod/
+samples/
+latents*
+runs/
